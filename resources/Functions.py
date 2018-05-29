@@ -38,11 +38,11 @@ def choose_profile(speed, tariff, tv):
         tariff += 6
     # Подбираю профиль
     if tariff is None:
-        result = speed - 1
-    elif speed - tariff >= 3:
+        result = speed - 2
+    elif tariff + 3 >= speed:
         result = tariff + 1
     else:
-        result = speed - 1
+        result = speed - 2
     if result <= 0:
         return False
     elif result > 16:
@@ -98,10 +98,12 @@ def run(arguments):
                         continue
                     if profile_speed in dslam.program_profiles:
                         log_file.write('{} - скорость {}, тариф {}, TV {}, профиль {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], profile_speed))
-                        dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed])
-                    elif (profile_speed - 1) in dslam.program_profiles:
-                        log_file.write('{} - скорость {}, тариф {}, TV {}, профиль {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], profile_speed - 1))
-                        dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed - 1])
+                        if port == 1:
+                            dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed], first=True, final=False)
+                        elif port == dslam.ports - 1:
+                            dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed], first=False, final=True)
+                        else:
+                            dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed], first=False, final=False)
                     else:
                         log_file.write('{} - не удалось найти профиль, скорость {}, тариф {}, TV {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv']))
                         continue
