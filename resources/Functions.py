@@ -82,14 +82,14 @@ def run(arguments):
     if not os.path.exists('profile_logs'):
         os.mkdir('profile_logs')
         
+    print('Обработка {}'.format(hostname))  
     with open('profile_logs{}{}.txt'.format(os.sep, hostname), 'w') as log_file:
         log_file.write('--- {} ---\n'.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')))   
-        print('Обработка {}'.format(hostname))
         for board in dslam.boards:
             current_profiles = dslam.get_adsl_line_profile_board(board)
             for port in range(0, dslam.ports):
                 key = '{}/{}/{}'.format(hostname, board, port)
-                if key not in data:
+                if (key not in data) or (key in Settings.black_list):
                     continue
                 profile_speed = choose_profile(data[key]['speed'], data[key]['tariff'], data[key]['tv'])
                 if profile_speed:
@@ -103,5 +103,6 @@ def run(arguments):
                     else:
                         log_file.write('{} - не удалось найти профиль, скорость {}, тариф {}, TV {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv']))
                         continue
-        print('{} обработан'.format(hostname))
+    print('{} обработан'.format(hostname))
+    del dslam
                 
