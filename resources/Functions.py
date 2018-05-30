@@ -2,6 +2,7 @@
 
 import MySQLdb
 import datetime
+import time
 import re
 import os
 from resources import DslamHuawei
@@ -39,7 +40,7 @@ def choose_profile(speed, tariff, tv):
     # Подбираю профиль
     if tariff is None:
         result = speed - 2
-    elif tariff + 3 >= speed:
+    elif tariff + 3 <= speed:
         result = tariff + 1
     else:
         result = speed - 2
@@ -84,7 +85,6 @@ def run(arguments):
     with open('profile_logs{}{}.txt'.format(os.sep, hostname), 'w') as log_file:
         log_file.write('--- {} ---\n'.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')))   
         print('Обработка {}'.format(hostname))
-        
         for board in dslam.boards:
             current_profiles = dslam.get_adsl_line_profile_board(board)
             for port in range(0, dslam.ports):
@@ -98,12 +98,8 @@ def run(arguments):
                         continue
                     if profile_speed in dslam.program_profiles:
                         log_file.write('{} - скорость {}, тариф {}, TV {}, профиль {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], profile_speed))
-                        if port == 1:
-                            dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed], first=True, final=False)
-                        elif port == dslam.ports - 1:
-                            dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed], first=False, final=True)
-                        else:
-                            dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed], first=False, final=False)
+                        dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed])
+                        time.sleep(1)
                     else:
                         log_file.write('{} - не удалось найти профиль, скорость {}, тариф {}, TV {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv']))
                         continue
