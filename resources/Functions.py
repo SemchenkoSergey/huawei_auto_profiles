@@ -19,7 +19,7 @@ def get_sql_data():
      ON dd.hostname = ad.hostname
      AND dd.board = ad.board
      AND dd.port = ad.port
-    WHERE CAST(dd.datetime  as DATE) = DATE_ADD(CURRENT_DATE(), INTERVAL -1 DAY)
+    WHERE CAST(dd.datetime  as DATE) >= DATE_ADD(CURRENT_DATE(), INTERVAL -1 DAY)
      AND ad.area LIKE '%Петровск%'
     GROUP BY dd.hostname, dd.board, dd.port
     HAVING AVG(max_dw_rate) IS NOT NULL
