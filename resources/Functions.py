@@ -65,7 +65,7 @@ def connect_dslam(host):
     for profile in dslam.adsl_line_profile:
         work_profile = re.search(re_string, dslam.adsl_line_profile[profile]['profile_name'])
         if work_profile:
-            dslam.program_profiles[int(work_profile.group(1))] = profile   
+            dslam.program_profiles[int(work_profile.group(1))] = profile
     return dslam
     
 
@@ -78,11 +78,16 @@ def run(arguments):
     except Exception as ex:
         print(ex)
         return False
+    
     hostname = dslam.hostname
+    print('Обработка {}'.format(hostname))
+    if len(dslam.program_profiles) == 0:
+        print('{} - не найдены нужные профили линий!'.format(hostname))
+        return
+
     if not os.path.exists('profile_logs'):
         os.mkdir('profile_logs')
         
-    print('Обработка {}'.format(hostname))  
     with open('profile_logs{}{}.txt'.format(os.sep, hostname), 'w') as log_file:
         log_file.write('--- {} ---\n'.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')))   
         for board in dslam.boards:
@@ -105,4 +110,3 @@ def run(arguments):
                         continue
     print('{} обработан'.format(hostname))
     del dslam
-                

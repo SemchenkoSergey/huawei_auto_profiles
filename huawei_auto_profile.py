@@ -22,8 +22,8 @@ def main():
             print('Начало работы: {}'.format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M')))
             print('\n\nПолучение данных из SQL-базы...')
             sql_data = f.get_sql_data()
-            for data in sql_data:
-                print(data, sql_data[data])
+            #for data in sql_data:
+                #print(data, sql_data[data])
             print('\nДанные для работы получены. Запуск обработки DSLAM...\n')
             
             arguments = [(host, sql_data) for host in Settings.hosts]
