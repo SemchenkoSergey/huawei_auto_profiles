@@ -3,6 +3,7 @@
 
 import datetime
 import time
+import os
 from concurrent.futures import ThreadPoolExecutor
 from resources import Functions as f
 from resources import Settings
@@ -15,6 +16,9 @@ def main():
     run_date = datetime.datetime.now().date()
     print('Запуск произойдет завтра после 2 часов утра...\n')
     #run_date = datetime.datetime.now().date() - datetime.timedelta(days=1)
+    
+    if not os.path.exists('profile_logs'):
+        os.mkdir('profile_logs')    
     
     while True:
         current_date = datetime.datetime.now().date()
