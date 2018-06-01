@@ -88,7 +88,7 @@ def run(arguments):
     if not os.path.exists('profile_logs'):
         os.mkdir('profile_logs')
         
-    with open('profile_logs{}{}.txt'.format(os.sep, hostname), 'w') as log_file:
+    with open('profile_logs{}{} {}.txt'.format(os.sep, hostname, datetime.datetime.now().strftime('%d-%m-%y')), 'w') as log_file:
         log_file.write('--- {} ---\n'.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')))   
         for board in dslam.boards:
             current_profiles = dslam.get_adsl_line_profile_board(board)
