@@ -7,7 +7,13 @@ login_5616 = ''
 password_5616 = ''
 
 #Количество потоков выполнения
-threads = 1
+threads = 5
+
+#Запас скорости
+delta = 2
+
+#Интервал запуска (часов)
+run_interval = 6
 
 #Список DSLAM
 hosts = (('ip', 'model'),)
