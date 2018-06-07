@@ -19,12 +19,12 @@ def get_sql_data():
      ON dd.hostname = ad.hostname
      AND dd.board = ad.board
      AND dd.port = ad.port
-    WHERE CAST(dd.datetime  as DATE) >= DATE_ADD(CURRENT_DATE(), INTERVAL -1 DAY)
+    WHERE dd.datetime >= ADDTIME(NOW(), "-{}:0:0")
      AND ad.area LIKE '%Петровск%'
     GROUP BY dd.hostname, dd.board, dd.port
     HAVING AVG(max_dw_rate) IS NOT NULL
     ORDER BY dd.hostname, dd.board, dd.port
-    '''
+    '''.format(Settings.run_interval + 1)
     cursor.execute(command)
     raw_data = cursor.fetchall()
     connect.close()
@@ -39,13 +39,13 @@ def choose_profile(speed, tariff, tv):
         tariff += 6
     # Подбираю профиль
     if tariff is None:
-        result = speed - 2
-    elif tariff + 3 <= speed:
+        result = speed - Settings.delta
+    elif tariff + Settings.delta + 1 <= speed:
         result = tariff + 1
     else:
-        result = speed - 2
+        result = speed - Settings.delta
     if result <= 0:
-        return False
+        return 1
     elif result > 16:
         return 16
     else:
@@ -87,8 +87,9 @@ def run(arguments):
 
     
         
-    with open('profile_logs{}{} {}.txt'.format(os.sep, hostname, datetime.datetime.now().strftime('%d-%m-%y')), 'w') as log_file:
-        log_file.write('--- {} ---\n'.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')))   
+    with open('profile_logs{}{} {}.txt'.format(os.sep, hostname, datetime.datetime.now().strftime('%d-%m-%y')), 'a') as log_file:
+        log_file.write(' {} '.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')).center(100, '-'))
+        log_file.write('\n')
         for board in dslam.boards:
             current_profiles = dslam.get_adsl_line_profile_board(board)
             for port in range(0, dslam.ports):
