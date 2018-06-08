@@ -21,13 +21,14 @@ def main():
             if (current_time - run_time).seconds < run_interval:
                 time.sleep(600)
                 continue
-        
         print('Начало работы: {}'.format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M')))
         print('\n\nПолучение данных из SQL-базы...')
         sql_data = f.get_sql_data()
         #for data in sql_data:
             #print(data, sql_data[data])
         print('\nДанные для работы получены. Запуск обработки DSLAM...\n')
+        f.set_black_list()
+        f.print_black_list()
         
         arguments = [(host, sql_data) for host in Settings.hosts]
         

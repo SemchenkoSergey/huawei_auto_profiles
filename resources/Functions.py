@@ -9,6 +9,7 @@ from resources import DslamHuawei
 from resources import Settings
 
 DslamHuawei.LOGGING = True
+BLACK_LIST = []
 
 def get_sql_data():
     connect = MySQLdb.connect(host=Settings.db_host, user=Settings.db_user, password=Settings.db_password, db=Settings.db_name, charset='utf8')
@@ -32,7 +33,27 @@ def get_sql_data():
     for data in raw_data:
         result['{}/{}/{}'.format(data[0], data[1], data[2])] = {'speed': data[3], 'tariff': data[4], 'tv': data[5]}
     return result
+    
 
+def set_black_list():
+    BLACK_LIST.clear()
+    with open('black_list.txt', 'r') as file:
+        for line in file:
+            if ('#' in line) or (line.strip() == ''):
+                continue
+            BLACK_LIST.append(line.strip())
+    BLACK_LIST.sort()
+    
+                       
+def print_black_list():
+    print('\n')
+    print(' Затронуты не будут '.center(50, '-'))
+    for line in BLACK_LIST:
+        print(line)
+    print(''.center(50, '-'))
+    print('\n')
+    
+            
 def choose_profile(speed, tariff, tv):
     # Добавляю 6Мб если есть ТВ
     if tariff is not None and tv == 'yes':
@@ -50,6 +71,7 @@ def choose_profile(speed, tariff, tv):
         return 16
     else:
         return int(result)
+        
 
 def connect_dslam(host):
     ip = host[0]
@@ -84,9 +106,7 @@ def run(arguments):
     if len(dslam.program_profiles) == 0:
         print('{} - не найдены нужные профили линий!'.format(hostname))
         return
-
-    
-        
+   
     with open('profile_logs{}{} {}.txt'.format(os.sep, hostname, datetime.datetime.now().strftime('%d-%m-%y')), 'a') as log_file:
         log_file.write(' {} '.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')).center(100, '-'))
         log_file.write('\n')
@@ -94,7 +114,7 @@ def run(arguments):
             current_profiles = dslam.get_adsl_line_profile_board(board)
             for port in range(0, dslam.ports):
                 key = '{}/{}/{}'.format(hostname, board, port)
-                if (key not in data) or (key in Settings.black_list):
+                if (key not in data) or (key in BLACK_LIST):
                     continue
                 profile_speed = choose_profile(data[key]['speed'], data[key]['tariff'], data[key]['tv'])
                 if profile_speed:
