@@ -5,6 +5,7 @@ import datetime
 import time
 import re
 import os
+import sys
 from resources import DslamHuawei
 from resources import Settings
 
@@ -13,9 +14,16 @@ BLACK_LIST = []
 
 def get_sql_data():
     connect = MySQLdb.connect(host=Settings.db_host, user=Settings.db_user, password=Settings.db_password, db=Settings.db_name, charset='utf8')
-    cursor = connect.cursor()    
+    cursor = connect.cursor()
+    if Settings.speed == 'AVG':
+        speed = 'TRUNCATE(AVG(dd.max_dw_rate)/1000, 0)'
+    elif Settings.speed == 'MIN':
+        speed = 'TRUNCATE(MIN(dd.max_dw_rate)/1000, 0)'
+    else:
+        print('Не удалось распознать параметр speed в файле Settings')
+        sys.exit()
     command = '''
-    SELECT DISTINCT dd.hostname, dd.board, dd.port, TRUNCATE(AVG(dd.max_dw_rate)/1000, 0), TRUNCATE(ad.tariff/1000, 0), ad.tv
+    SELECT DISTINCT dd.hostname, dd.board, dd.port, {}, TRUNCATE(ad.tariff/1000, 0), ad.tv
     FROM data_dsl dd INNER JOIN abon_dsl ad
      ON dd.hostname = ad.hostname
      AND dd.board = ad.board
@@ -25,7 +33,7 @@ def get_sql_data():
     GROUP BY dd.hostname, dd.board, dd.port
     HAVING AVG(max_dw_rate) IS NOT NULL
     ORDER BY dd.hostname, dd.board, dd.port
-    '''.format(Settings.run_interval + 1)
+    '''.format(speed, Settings.run_interval + 1)
     cursor.execute(command)
     raw_data = cursor.fetchall()
     connect.close()
