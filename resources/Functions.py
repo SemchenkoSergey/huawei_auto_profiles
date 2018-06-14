@@ -67,17 +67,17 @@ def print_black_list():
     print('\n')
     
             
-def choose_profile(speed, tariff, tv):
+def choose_profile(delta, speed, tariff, tv):
     # Добавляю 6Мб если есть ТВ
     if tariff is not None and tv == 'yes':
         tariff += 6
     # Подбираю профиль
     if tariff is None:
-        result = speed - Settings.delta
-    elif (tariff + Settings.delta + 1) <= speed:
+        result = speed - delta
+    elif (tariff + delta + 1) <= speed:
         result = tariff + 1
     else:
-        result = speed - Settings.delta
+        result = speed - delta
     if result <= 0:
         return 1
     elif result > 16:
@@ -130,21 +130,24 @@ def run(arguments):
                 key = '{}/{}/{}'.format(hostname, board, port)
                 if (key not in data) or (key in BLACK_LIST):
                     continue
-                profile_speed = choose_profile(data[key]['speed'], data[key]['tariff'], data[key]['tv'])
-                valid_profile = [dslam.program_profiles[data[key]['speed'] + 1 - x] for x in range(0, Settings.delta + 1) if (data[key]['speed'] + 1 - x) in range(1,17)]
-                if profile_speed:
-                    if dslam.program_profiles[profile_speed] == current_profiles[port]:
-                        log_file.write('{} - стоит оптимальный профиль (скорость {}, тариф {}, TV {}, профиль {})\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[dslam.program_profiles[profile_speed]]['profile_name']))
-                        continue
-                    elif current_profiles[port] in valid_profile:
-                        log_file.write('{} - скорость не выходила за рамки профиля (скорость {}, тариф {}, TV {}, профиль {})\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[current_profiles[port]]['profile_name']))
-                        continue
-                    if profile_speed in dslam.program_profiles:
-                        log_file.write('{} - скорость {}, тариф {}, TV {}, профиль {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[dslam.program_profiles[profile_speed]]['profile_name']))
-                        dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed])
-                        time.sleep(1)
-                    else:
-                        log_file.write('{} - не удалось найти профиль, скорость {}, тариф {}, TV {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv']))
-                        continue
+                if data[key]['speed'] <= Settings.threshold_delta:
+                    delta = Settings.before_delta
+                else:
+                    delta = Settings.after_delta
+                profile_speed = choose_profile(delta, data[key]['speed'], data[key]['tariff'], data[key]['tv'])
+                valid_profile = [dslam.program_profiles[data[key]['speed'] + 1 - x] for x in range(0, delta + 1) if (data[key]['speed'] + 1 - x) in range(1,17)]
+                if dslam.program_profiles[profile_speed] == current_profiles[port]:
+                    log_file.write('{} - стоит оптимальный профиль (скорость {}, тариф {}, TV {}, профиль {})\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[dslam.program_profiles[profile_speed]]['profile_name']))
+                    continue
+                elif current_profiles[port] in valid_profile:
+                    log_file.write('{} - скорость не выходила за рамки профиля (скорость {}, тариф {}, TV {}, профиль {})\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[current_profiles[port]]['profile_name']))
+                    continue
+                if profile_speed in dslam.program_profiles:
+                    log_file.write('{} - скорость {}, тариф {}, TV {}, профиль {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[dslam.program_profiles[profile_speed]]['profile_name']))
+                    dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed])
+                    time.sleep(1)
+                else:
+                    log_file.write('{} - не удалось найти профиль, скорость {}, тариф {}, TV {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv']))
+                    continue
     print('{} обработан'.format(hostname))
     del dslam

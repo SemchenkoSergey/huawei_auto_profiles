@@ -13,7 +13,7 @@ def main():
     run_interval = Settings.run_interval * 60 * 60
     
     if not os.path.exists('profile_logs'):
-        os.mkdir('profile_logs')    
+        os.mkdir('profile_logs')
     
     while True:
         current_time = datetime.datetime.now()
