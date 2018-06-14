@@ -15,6 +15,11 @@ BLACK_LIST = []
 def get_sql_data():
     connect = MySQLdb.connect(host=Settings.db_host, user=Settings.db_user, password=Settings.db_password, db=Settings.db_name, charset='utf8')
     cursor = connect.cursor()
+    try:
+        speed = Settings.speed
+    except:
+        print('Отсутствует параметр speed в файле Settings')
+        sys.exit()
     if Settings.speed == 'AVG':
         speed = 'TRUNCATE(AVG(dd.max_dw_rate)/1000, 0)'
     elif Settings.speed == 'MIN':
@@ -31,7 +36,7 @@ def get_sql_data():
     WHERE dd.datetime >= ADDTIME(NOW(), "-{}:0:0")
      AND ad.area LIKE '%Петровск%'
     GROUP BY dd.hostname, dd.board, dd.port
-    HAVING AVG(max_dw_rate) IS NOT NULL
+    HAVING AVG(dd.max_dw_rate) IS NOT NULL
     ORDER BY dd.hostname, dd.board, dd.port
     '''.format(speed, Settings.run_interval + 1)
     cursor.execute(command)
@@ -69,7 +74,7 @@ def choose_profile(speed, tariff, tv):
     # Подбираю профиль
     if tariff is None:
         result = speed - Settings.delta
-    elif tariff + Settings.delta + 1 <= speed:
+    elif (tariff + Settings.delta + 1) <= speed:
         result = tariff + 1
     else:
         result = speed - Settings.delta
@@ -79,7 +84,7 @@ def choose_profile(speed, tariff, tv):
         return 16
     else:
         return int(result)
-        
+    
 
 def connect_dslam(host):
     ip = host[0]
@@ -118,6 +123,7 @@ def run(arguments):
     with open('profile_logs{}{} {}.txt'.format(os.sep, hostname, datetime.datetime.now().strftime('%d-%m-%y')), 'a') as log_file:
         log_file.write(' {} '.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')).center(100, '-'))
         log_file.write('\n')
+
         for board in dslam.boards:
             current_profiles = dslam.get_adsl_line_profile_board(board)
             for port in range(0, dslam.ports):
@@ -125,12 +131,16 @@ def run(arguments):
                 if (key not in data) or (key in BLACK_LIST):
                     continue
                 profile_speed = choose_profile(data[key]['speed'], data[key]['tariff'], data[key]['tv'])
+                valid_profile = [dslam.program_profiles[data[key]['speed'] + 1 - x] for x in range(0, Settings.delta + 1) if (data[key]['speed'] + 1 - x) in range(1,17)]
                 if profile_speed:
                     if dslam.program_profiles[profile_speed] == current_profiles[port]:
-                        log_file.write('{} - менять профиль не нужно (скорость {}, тариф {}, TV {}, профиль {})\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], profile_speed))
+                        log_file.write('{} - стоит оптимальный профиль (скорость {}, тариф {}, TV {}, профиль {})\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[dslam.program_profiles[profile_speed]]['profile_name']))
+                        continue
+                    elif current_profiles[port] in valid_profile:
+                        log_file.write('{} - скорость не выходила за рамки профиля (скорость {}, тариф {}, TV {}, профиль {})\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[current_profiles[port]]['profile_name']))
                         continue
                     if profile_speed in dslam.program_profiles:
-                        log_file.write('{} - скорость {}, тариф {}, TV {}, профиль {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], profile_speed))
+                        log_file.write('{} - скорость {}, тариф {}, TV {}, профиль {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv'], dslam.adsl_line_profile[dslam.program_profiles[profile_speed]]['profile_name']))
                         dslam.set_adsl_line_profile_port(board, port, dslam.program_profiles[profile_speed])
                         time.sleep(1)
                     else:
