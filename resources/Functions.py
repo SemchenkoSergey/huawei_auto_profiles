@@ -96,7 +96,7 @@ def connect_dslam(host):
         dslam = DslamHuawei.DslamHuawei5616(ip, Settings.login_5616, Settings.password_5616)
         
     dslam.program_profiles = {}
-    re_string = r'^petr_(\d+)-\d+-\d+$'
+    re_string = r'^auto_(\d+)-\d+-\d+$'
     for profile in dslam.adsl_line_profile:
         work_profile = re.search(re_string, dslam.adsl_line_profile[profile]['profile_name'])
         if work_profile:
