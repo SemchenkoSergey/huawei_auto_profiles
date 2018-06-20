@@ -85,6 +85,14 @@ def choose_profile(delta, speed, tariff, tv):
     else:
         return int(result)
     
+    
+def write_error(hostname, ex):
+    with open('errors{}{} {}.txt'.format(os.sep, hostname, datetime.datetime.now().strftime('%d-%m-%y')), 'a') as err_file:
+        err_file.write(' {} '.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')).center(100, '-'))
+        err_file.write('\n')
+        err_file.write(ex)
+        err_file.write('\n')
+
 
 def connect_dslam(host):
     ip = host[0]
@@ -111,7 +119,7 @@ def run(arguments):
     try:
         dslam = connect_dslam(host)
     except Exception as ex:
-        print(ex)
+        write_error(host, ex)
         return False
     
     hostname = dslam.hostname
@@ -123,12 +131,14 @@ def run(arguments):
     with open('profile_logs{}{} {}.txt'.format(os.sep, hostname, datetime.datetime.now().strftime('%d-%m-%y')), 'a') as log_file:
         log_file.write(' {} '.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')).center(100, '-'))
         log_file.write('\n')
-        
-        try:
-
-            for board in dslam.boards:
+        for board in dslam.boards:
+            try:
                 current_profiles = dslam.get_adsl_line_profile_board(board)
-                for port in range(0, dslam.ports):
+            except:
+                write_error(hostname, ex)
+                continue
+            for port in range(0, dslam.ports):
+                try:
                     key = '{}/{}/{}'.format(hostname, board, port)
                     if (key not in data) or (key in BLACK_LIST):
                         continue
@@ -151,11 +161,9 @@ def run(arguments):
                     else:
                         log_file.write('{} - не удалось найти профиль, скорость {}, тариф {}, TV {}\n'.format(key, data[key]['speed'], data[key]['tariff'], data[key]['tv']))
                         continue
-            except Exception as ex:
-                with open('errors{}{} {}.txt'.format(os.sep, hostname, datetime.datetime.now().strftime('%d-%m-%y')), 'a') as err_file:
-                    err_file.write(' {} '.format(datetime.datetime.now().strftime('%d-%m-%y %H:%M')).center(100, '-'))
-                    err_file.write('\n')
-                    err_file.write(ex)
-                return False
+                except:
+                    write_error(hostname, ex)
+                    continue
+
     print('{} обработан'.format(hostname))
     del dslam
