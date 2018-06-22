@@ -7,10 +7,15 @@ login_5616 = ''
 password_5616 = ''
 
 #Количество потоков выполнения
-threads = 5
+threads = 10
 
 #Запас скорости
-delta = 2
+threshold_delta = 8
+before_delta = 1
+after_delta = 3
+
+#Скорость ('AVG' - средняя, 'MIN' - минимальная)
+speed = 'MIN'
 
 #Интервал запуска (часов)
 run_interval = 6
